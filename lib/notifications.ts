@@ -47,7 +47,7 @@ export async function sendNotificationToUser(
       } catch (error) {
         console.error(`Failed to send notification to ${subscription.endpoint}:`, error)
         
-        if (error.statusCode === 410) {
+        if ((error as any)?.statusCode === 410) {
           await prisma.pushSubscription.delete({
             where: { endpoint: subscription.endpoint }
           })

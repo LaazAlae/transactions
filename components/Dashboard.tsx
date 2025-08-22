@@ -12,9 +12,9 @@ import { LogOut, Plus, Download, Settings } from 'lucide-react'
 
 interface User {
   id: string
-  email: string
+  email?: string | null
   role: string
-  name?: string
+  name?: string | null
 }
 
 interface DashboardProps {
@@ -123,7 +123,7 @@ export function Dashboard({ user }: DashboardProps) {
               </span>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-700">{user.name || user.email}</span>
+              <span className="text-sm text-gray-700">{user.name || user.email || 'User'}</span>
               <ExcelExport transactions={transactions} />
               <button
                 onClick={handleSignOut}
