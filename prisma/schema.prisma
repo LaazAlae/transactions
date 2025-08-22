@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String             @id @default(cuid())
+  email             String             @unique
+  password          String
+  role              UserRole           @default(BUYER)
+  name              String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  lastLogin         DateTime?
+  isActive          Boolean            @default(true)
+  budgetActions     BudgetAction[]
+  pushSubscriptions PushSubscription[]
+  transactions      Transaction[]
+
+  @@map("users")
+}
+
+model Budget {
+  id            String         @id @default(cuid())
+  totalAmount   Decimal        @db.Decimal(15, 2)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  budgetActions BudgetAction[]
+  transactions  Transaction[]
+
+  @@map("budgets")
+}
+
+model Transaction {
+  id          String            @id @default(cuid())
+  amount      Decimal           @db.Decimal(15, 2)
+  description String
+  date        DateTime
+  status      TransactionStatus @default(PENDING)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  approvedAt  DateTime?
+  rejectedAt  DateTime?
+  userId      String
+  budgetId    String
+  budget      Budget            @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("transactions")
+}
+
+model BudgetAction {
+  id          String           @id @default(cuid())
+  type        BudgetActionType
+  amount      Decimal          @db.Decimal(15, 2)
+  description String?
+  createdAt   DateTime         @default(now())
+  userId      String
+  budgetId    String
+  budget      Budget           @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("budget_actions")
+}
+
+model PushSubscription {
+  id       String @id @default(cuid())
+  endpoint String @unique
+  p256dh   String
+  auth     String
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("push_subscriptions")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  details   Json?
+  ipAddress String?
+  userAgent String?
+  userId    String?
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+enum UserRole {
+  ADMIN
+  BUYER
+}
+
+enum TransactionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum BudgetActionType {
+  ADD_FUNDS
+  SUBTRACT_FUNDS
+}
