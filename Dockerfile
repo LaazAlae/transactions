@@ -1,3 +1,4 @@
+# Railway Deployment - Fixed for Prisma
 FROM node:18-alpine
 
 WORKDIR /app
