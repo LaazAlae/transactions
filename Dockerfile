@@ -1,51 +1,22 @@
-FROM node:18-alpine AS base
+FROM node:18-alpine
 
-# Install dependencies only when needed
-FROM base AS deps
-RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Copy package files only
-COPY package.json package-lock.json* ./
-# Install without running postinstall script
-RUN npm ci --only=production --ignore-scripts
-
-# Build the app
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+# Copy all files first
 COPY . .
 
-# Generate Prisma client manually
-RUN npx prisma generate
+# Install dependencies and generate Prisma client in one step
+RUN npm ci && npx prisma generate
 
 # Build the application
 RUN npm run build
 
-# Production image
-FROM base AS runner
-WORKDIR /app
-
-ENV NODE_ENV production
-
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-# Copy built application
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-# Copy Prisma files
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-
-USER nextjs
-
+# Expose port
 EXPOSE 3000
 
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
+# Set environment variables
+ENV NODE_ENV=production
+ENV PORT=3000
 
-CMD ["node", "server.js"]
+# Start the application
+CMD ["npm", "start"]
